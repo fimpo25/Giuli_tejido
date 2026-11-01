@@ -14,6 +14,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.giuli.tejido.ui.home.HomeScreen
+import com.giuli.tejido.ui.inventory.InventoryScreen
 import com.giuli.tejido.ui.project.ProjectScreen
 import com.giuli.tejido.ui.theme.GiuliTheme
 import com.giuli.tejido.ui.update.UpdateScreen
@@ -31,6 +32,7 @@ class MainActivity : ComponentActivity() {
                             HomeScreen(
                                 onOpenProject = { id -> nav.navigate("project/$id") },
                                 onOpenUpdates = { nav.navigate("updates") },
+                                onOpenInventory = { nav.navigate("inventory") },
                             )
                         }
                         composable(
@@ -38,6 +40,9 @@ class MainActivity : ComponentActivity() {
                             arguments = listOf(navArgument("projectId") { type = NavType.LongType }),
                         ) {
                             ProjectScreen(onBack = { nav.popBackStack() })
+                        }
+                        composable("inventory") {
+                            InventoryScreen(onBack = { nav.popBackStack() })
                         }
                         composable("updates") {
                             UpdateScreen(onBack = { nav.popBackStack() })

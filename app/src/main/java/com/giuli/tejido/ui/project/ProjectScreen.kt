@@ -48,8 +48,15 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material3.TopAppBarDefaults
+import com.giuli.tejido.data.CostItem
+import com.giuli.tejido.data.Project
+import com.giuli.tejido.data.TimeSession
 import com.giuli.tejido.data.subtotal
+import com.giuli.tejido.ui.ColorPickerDialog
 import com.giuli.tejido.ui.ConfirmDialog
+import com.giuli.tejido.ui.theme.ProjectTheme
 import com.giuli.tejido.ui.formatDuration
 import com.giuli.tejido.ui.formatMoney
 import com.giuli.tejido.ui.rememberNow
@@ -75,6 +82,21 @@ fun ProjectScreen(onBack: () -> Unit, vm: ProjectViewModel = viewModel()) {
         return
     }
 
+    ProjectTheme(colorIndex = p.colorIndex) {
+        Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+            ProjectContent(p = p, sessions = sessions, costs = costs, vm = vm, onBack = onBack)
+        }
+    }
+}
+
+@Composable
+private fun ProjectContent(
+    p: Project,
+    sessions: List<TimeSession>,
+    costs: List<CostItem>,
+    vm: ProjectViewModel,
+    onBack: () -> Unit,
+) {
     val running = p.runningSince != null
     val now = rememberNow(running)
     val trackedMs = sessions.sumOf { it.durationMs } +
@@ -84,6 +106,7 @@ fun ProjectScreen(onBack: () -> Unit, vm: ProjectViewModel = viewModel()) {
     var tab by rememberSaveable { mutableIntStateOf(0) }
     var menuOpen by remember { mutableStateOf(false) }
     var showEdit by remember { mutableStateOf(false) }
+    var showColor by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -92,6 +115,12 @@ fun ProjectScreen(onBack: () -> Unit, vm: ProjectViewModel = viewModel()) {
                 title = {
                     Text(p.name, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    actionIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                ),
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
@@ -109,6 +138,14 @@ fun ProjectScreen(onBack: () -> Unit, vm: ProjectViewModel = viewModel()) {
                                 onClick = {
                                     menuOpen = false
                                     showEdit = true
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Cambiar color") },
+                                leadingIcon = { Icon(Icons.Default.Palette, contentDescription = null) },
+                                onClick = {
+                                    menuOpen = false
+                                    showColor = true
                                 },
                             )
                             DropdownMenuItem(
@@ -176,6 +213,16 @@ fun ProjectScreen(onBack: () -> Unit, vm: ProjectViewModel = viewModel()) {
             },
         )
     }
+    if (showColor) {
+        ColorPickerDialog(
+            initial = p.colorIndex,
+            onConfirm = {
+                showColor = false
+                vm.setColor(it)
+            },
+            onDismiss = { showColor = false },
+        )
+    }
     if (confirmDelete) {
         ConfirmDialog(
             title = "Eliminar proyecto",
@@ -197,13 +244,10 @@ private fun SummaryStrip(trackedMs: Long, totalCost: Double, running: Boolean) {
     Surface(
         color = MaterialTheme.colorScheme.primaryContainer,
         contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-        shape = MaterialTheme.shapes.large,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+        modifier = Modifier.fillMaxWidth(),
     ) {
         Row(
-            Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+            Modifier.padding(start = 12.dp, end = 12.dp, top = 2.dp, bottom = 14.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Stat("Tiempo", formatDuration(trackedMs) + if (running) " ●" else "", Modifier.weight(1f))

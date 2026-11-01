@@ -6,7 +6,9 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.giuli.tejido.data.AppDatabase
+import com.giuli.tejido.data.CostChange
 import com.giuli.tejido.data.CostItem
+import com.giuli.tejido.data.InventoryRow
 import com.giuli.tejido.data.Counter
 import com.giuli.tejido.data.Note
 import com.giuli.tejido.data.PhotoStore
@@ -34,12 +36,16 @@ class ProjectViewModel(
     val counters: StateFlow<List<Counter>> = dao.observeCounters(projectId).state(emptyList())
     val notes: StateFlow<List<Note>> = dao.observeNotes(projectId).state(emptyList())
     val costs: StateFlow<List<CostItem>> = dao.observeCosts(projectId).state(emptyList())
+    val costChanges: StateFlow<List<CostChange>> = dao.observeCostChanges(projectId).state(emptyList())
+    val inventory: StateFlow<List<InventoryRow>> = dao.observeInventory().state(emptyList())
 
     // ---------- Proyecto ----------
 
     fun rename(name: String, description: String) = viewModelScope.launch {
         dao.renameProject(projectId, name, description)
     }
+
+    fun setColor(colorIndex: Int) = viewModelScope.launch { dao.setProjectColor(projectId, colorIndex) }
 
     fun deleteProject(onDone: () -> Unit) = viewModelScope.launch {
         val photos = dao.photoPathsOf(projectId)
@@ -114,16 +120,26 @@ class ProjectViewModel(
 
     // ---------- Costos ----------
 
-    fun saveCost(existing: CostItem?, article: String, unitPrice: Double, quantity: Double) =
-        viewModelScope.launch {
-            if (existing == null) {
-                dao.insertCost(
-                    CostItem(projectId = projectId, article = article, unitPrice = unitPrice, quantity = quantity),
-                )
-            } else {
-                dao.updateCost(existing.copy(article = article, unitPrice = unitPrice, quantity = quantity))
-            }
-        }
+    fun saveCost(
+        existing: CostItem?,
+        article: String,
+        unitPrice: Double,
+        quantity: Double,
+        inventoryItemId: Long?,
+        addToInventory: Boolean,
+        unit: String,
+    ) = viewModelScope.launch {
+        dao.saveCostItem(
+            projectId = projectId,
+            existingId = existing?.id,
+            article = article,
+            unitPrice = unitPrice,
+            quantity = quantity,
+            inventoryItemId = inventoryItemId,
+            addToInventory = addToInventory,
+            unit = unit,
+        )
+    }
 
     fun deleteCost(item: CostItem) = viewModelScope.launch { dao.deleteCost(item) }
 }

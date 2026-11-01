@@ -1,6 +1,10 @@
 package com.giuli.tejido.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -102,6 +106,68 @@ fun TextInputDialog(
                 Text(confirmText)
             }
         },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } },
+    )
+}
+
+/** Fila de círculos de colores para elegir el color de un proyecto. */
+@Composable
+fun ColorChooser(selected: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modifier) {
+    androidx.compose.foundation.layout.FlowRow(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        com.giuli.tejido.ui.theme.ProjectPalettes.forEachIndexed { index, palette ->
+            val isSelected = index == selected
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(androidx.compose.foundation.shape.CircleShape)
+                    .background(com.giuli.tejido.ui.theme.swatchColor(index))
+                    .then(
+                        if (isSelected) {
+                            Modifier.border(
+                                3.dp,
+                                MaterialTheme.colorScheme.onSurface,
+                                androidx.compose.foundation.shape.CircleShape,
+                            )
+                        } else {
+                            Modifier
+                        },
+                    )
+                    .clickable { onSelect(index) },
+                contentAlignment = Alignment.Center,
+            ) {
+                if (isSelected) {
+                    Icon(
+                        androidx.compose.material.icons.Icons.Default.Check,
+                        contentDescription = palette.name,
+                        tint = Color.White,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ColorPickerDialog(initial: Int, onConfirm: (Int) -> Unit, onDismiss: () -> Unit) {
+    var selected by rememberSaveable { mutableStateOf(initial) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Color del proyecto") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                ColorChooser(selected = selected, onSelect = { selected = it })
+                Text(
+                    com.giuli.tejido.ui.theme.paletteAt(selected).name,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        },
+        confirmButton = { TextButton(onClick = { onConfirm(selected) }) { Text("Aplicar") } },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } },
     )
 }

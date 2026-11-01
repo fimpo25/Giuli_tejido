@@ -62,7 +62,12 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.giuli.tejido.data.AppDatabase
 import com.giuli.tejido.data.ProjectSummary
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.filled.Inventory2
+import com.giuli.tejido.ui.ColorChooser
 import com.giuli.tejido.ui.EmptyState
+import com.giuli.tejido.ui.theme.ProjectTheme
 import com.giuli.tejido.ui.formatDuration
 import com.giuli.tejido.ui.formatMoney
 import com.giuli.tejido.ui.rememberNow
@@ -80,9 +85,9 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
     val projects: StateFlow<List<ProjectSummary>> = dao.observeSummaries()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
-    fun create(name: String, description: String, onCreated: (Long) -> Unit) {
+    fun create(name: String, description: String, colorIndex: Int, onCreated: (Long) -> Unit) {
         viewModelScope.launch {
-            val id = dao.createProject(name, description)
+            val id = dao.createProject(name, description, colorIndex)
             onCreated(id)
         }
     }
@@ -92,6 +97,7 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
 fun HomeScreen(
     onOpenProject: (Long) -> Unit,
     onOpenUpdates: () -> Unit,
+    onOpenInventory: () -> Unit,
     vm: HomeViewModel = viewModel(),
 ) {
     val projects by vm.projects.collectAsStateWithLifecycle()
@@ -112,6 +118,9 @@ fun HomeScreen(
                     containerColor = MaterialTheme.colorScheme.background,
                 ),
                 actions = {
+                    IconButton(onClick = onOpenInventory) {
+                        Icon(Icons.Default.Inventory2, contentDescription = "Inventario")
+                    }
                     IconButton(onClick = onOpenUpdates) {
                         BadgedBox(badge = { if (updateReady) Badge() }) {
                             Icon(Icons.Default.SystemUpdate, contentDescription = "Actualizaciones")
@@ -161,7 +170,9 @@ fun HomeScreen(
                     }
                 }
                 items(projects, key = { it.project.id }) { summary ->
-                    ProjectCard(summary, now, onClick = { onOpenProject(summary.project.id) })
+                    ProjectTheme(colorIndex = summary.project.colorIndex) {
+                        ProjectCard(summary, now, onClick = { onOpenProject(summary.project.id) })
+                    }
                 }
             }
             if (projects.isEmpty()) {
@@ -177,9 +188,9 @@ fun HomeScreen(
     if (showNew) {
         NewProjectDialog(
             onDismiss = { showNew = false },
-            onCreate = { name, desc ->
+            onCreate = { name, desc, color ->
                 showNew = false
-                vm.create(name, desc, onOpenProject)
+                vm.create(name, desc, color, onOpenProject)
             },
         )
     }
@@ -286,14 +297,18 @@ private fun ProjectCard(summary: ProjectSummary, now: Long, onClick: () -> Unit)
 }
 
 @Composable
-private fun NewProjectDialog(onDismiss: () -> Unit, onCreate: (String, String) -> Unit) {
+private fun NewProjectDialog(onDismiss: () -> Unit, onCreate: (String, String, Int) -> Unit) {
     var name by rememberSaveable { mutableStateOf("") }
     var desc by rememberSaveable { mutableStateOf("") }
+    var color by rememberSaveable { mutableStateOf(0) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Nuevo proyecto") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(
+                Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
@@ -311,10 +326,12 @@ private fun NewProjectDialog(onDismiss: () -> Unit, onCreate: (String, String) -
                     minLines = 2,
                     modifier = Modifier.fillMaxWidth(),
                 )
+                Text("Color", style = MaterialTheme.typography.labelLarge)
+                ColorChooser(selected = color, onSelect = { color = it })
             }
         },
         confirmButton = {
-            TextButton(enabled = name.isNotBlank(), onClick = { onCreate(name.trim(), desc.trim()) }) {
+            TextButton(enabled = name.isNotBlank(), onClick = { onCreate(name.trim(), desc.trim(), color) }) {
                 Text("Crear")
             }
         },
