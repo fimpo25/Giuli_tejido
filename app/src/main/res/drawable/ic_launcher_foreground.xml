@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ovillo de lana con hebra suelta -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- hebra suelta -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFE8D6"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:pathData="M74,72 C84,78 90,84 82,90 C76,94 70,88 64,90" />
+    <!-- ovillo -->
+    <path
+        android:fillColor="#FFE8D6"
+        android:pathData="M54,28 A26,26 0 1,1 53.99,28 Z" />
+    <!-- vueltas de lana -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#9C4A5A"
+        android:strokeWidth="2.6"
+        android:strokeLineCap="round"
+        android:pathData="M33,42 Q54,54 75,38 M29,55 Q54,68 79,50 M33,69 Q55,79 76,64 M44,31 Q62,54 46,78 M58,29 Q74,52 62,79" />
+</vector>
