@@ -65,6 +65,10 @@ import com.giuli.tejido.data.ProjectSummary
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.filled.Inventory2
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.height
 import com.giuli.tejido.ui.ColorChooser
 import com.giuli.tejido.ui.EmptyState
 import com.giuli.tejido.ui.theme.ProjectTheme
@@ -202,94 +206,117 @@ private fun ProjectCard(summary: ProjectSummary, now: Long, onClick: () -> Unit)
     val running = p.runningSince != null
     val totalMs = summary.trackedMs + (p.runningSince?.let { (now - it).coerceAtLeast(0) } ?: 0L)
 
+    val onColor = MaterialTheme.colorScheme.onPrimaryContainer
+    val subtle = onColor.copy(alpha = 0.75f)
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
+            contentColor = onColor,
+        ),
         shape = RoundedCornerShape(20.dp),
     ) {
-        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            val cover = summary.coverPhoto
-            if (cover != null && File(cover).exists()) {
-                AsyncImage(
-                    model = File(cover),
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .size(68.dp)
-                        .clip(RoundedCornerShape(14.dp)),
-                )
-            } else {
-                Box(
-                    modifier = Modifier
-                        .size(68.dp)
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(MaterialTheme.colorScheme.primaryContainer),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        p.name.trim().take(1).uppercase(),
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+        Row(Modifier.height(IntrinsicSize.Min)) {
+            // Franja con el color fuerte del proyecto
+            Box(
+                Modifier
+                    .width(8.dp)
+                    .fillMaxHeight()
+                    .background(MaterialTheme.colorScheme.primary),
+            )
+            Row(
+                Modifier
+                    .weight(1f)
+                    .padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                val cover = summary.coverPhoto
+                if (cover != null && File(cover).exists()) {
+                    AsyncImage(
+                        model = File(cover),
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .size(68.dp)
+                            .clip(RoundedCornerShape(14.dp))
+                            .border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(14.dp)),
                     )
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .size(68.dp)
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(MaterialTheme.colorScheme.primary),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            p.name.trim().take(1).uppercase(),
+                            style = MaterialTheme.typography.headlineMedium,
+                            color = MaterialTheme.colorScheme.onPrimary,
+                        )
+                    }
                 }
-            }
-            Spacer(Modifier.width(14.dp))
-            Column(Modifier.weight(1f)) {
-                Text(
-                    p.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                if (p.description.isNotBlank()) {
+                Spacer(Modifier.width(14.dp))
+                Column(Modifier.weight(1f)) {
                     Text(
-                        p.description,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        p.name,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
-                }
-                Row(
-                    Modifier.padding(top = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    if (running) {
-                        Box(
-                            Modifier
-                                .size(8.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.primary),
+                    if (p.description.isNotBlank()) {
+                        Text(
+                            p.description,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = subtle,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
                         )
-                        Spacer(Modifier.width(6.dp))
-                    } else {
+                    }
+                    Row(
+                        Modifier.padding(top = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        if (running) {
+                            Box(
+                                Modifier
+                                    .size(8.dp)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.primary),
+                            )
+                            Spacer(Modifier.width(6.dp))
+                        } else {
+                            Icon(
+                                Icons.Default.Timer,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                                tint = subtle,
+                            )
+                            Spacer(Modifier.width(4.dp))
+                        }
+                        Text(
+                            formatDuration(totalMs),
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = if (running) FontWeight.Bold else FontWeight.Normal,
+                            color = if (running) MaterialTheme.colorScheme.primary else subtle,
+                        )
+                        Spacer(Modifier.width(14.dp))
                         Icon(
-                            Icons.Default.Timer,
+                            Icons.Default.AttachMoney,
                             contentDescription = null,
                             modifier = Modifier.size(16.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            tint = subtle,
                         )
-                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            formatMoney(summary.totalCost),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = subtle,
+                        )
                     }
-                    Text(
-                        formatDuration(totalMs),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = if (running) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Spacer(Modifier.width(14.dp))
-                    Icon(
-                        Icons.Default.AttachMoney,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Text(
-                        formatMoney(summary.totalCost),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
                 }
             }
         }
